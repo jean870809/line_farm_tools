@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>產品比例換算器</title>
+    <title>Line 熊大農場產品比例換算器</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -122,8 +122,12 @@
 
             <div id="calculator-content" style="display: none;">
                 <div class="product-group">
+                    <label for="store1">店家 1:</label>
+                    <select id="store1"></select>
+
                     <label for="product1">產品 1:</label>
                     <select id="product1"></select>
+
                     <label for="value1">數量:</label>
                     <input type="number" id="value1" step="any" min="0" placeholder="請輸入數量">
                 </div>
@@ -134,8 +138,12 @@
                 </div>
 
                 <div class="product-group">
+                    <label for="store2">店家 2:</label>
+                    <select id="store2"></select>
+
                     <label for="product2">產品 2:</label>
                     <select id="product2"></select>
+
                     <label for="value2">數量:</label>
                     <input type="number" id="value2" step="any" min="0" placeholder="請輸入數量">
                 </div>
@@ -143,7 +151,7 @@
         </div>
 
         <footer class="footer">
-            <p>© 2025 Line 熊大農場產品比例換算器</p>
+            <p>© Line 熊大農場產品比例換算器</p>
         </footer>
     </div>
 
@@ -152,10 +160,14 @@
             // Google表格CSV連結
             const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGcoHbq7kfXRlFEZCTDyTRW6YLsbUzt6oA8ii8IcE4BwVV66rmckeImgbslwpzjLTo1y6gNcopmqTK/pub?gid=0&single=true&output=csv';
 
-            // 產品資料陣列
-            let products = [];
+            // 資料儲存
+            let rawData = [];
+            let stores = [];
+            let productsByStore = {};
 
             // 獲取DOM元素
+            const store1Select = document.getElementById('store1');
+            const store2Select = document.getElementById('store2');
             const product1Select = document.getElementById('product1');
             const product2Select = document.getElementById('product2');
             const value1Input = document.getElementById('value1');
@@ -175,22 +187,45 @@
                         const columns = rows[i].split(',');
 
                         // 確保資料格式正確
-                        if (columns.length >= 2) {
-                            const productName = columns[0].trim();
-                            const ratio = parseFloat(columns[1].trim());
+                        if (columns.length >= 3) {
+                            const storeName = columns[0].trim();
+                            const productName = columns[1].trim();
+                            const ratio = parseFloat(columns[2].trim());
 
-                            // 確保產品名稱不為空且比例是有效數字
-                            if (productName && !isNaN(ratio)) {
-                                products.push({
-                                    name: productName,
+                            // 確保資料有效
+                            if (storeName && productName && !isNaN(ratio)) {
+                                rawData.push({
+                                    store: storeName,
+                                    product: productName,
                                     ratio: ratio
                                 });
+
+                                // 收集不重複的店名
+                                if (!stores.includes(storeName)) {
+                                    stores.push(storeName);
+                                }
+
+                                // 按店名組織產品
+                                if (!productsByStore[storeName]) {
+                                    productsByStore[storeName] = [];
+                                }
+
+                                // 避免重複添加產品
+                                if (!productsByStore[storeName].some(p => p.name === productName)) {
+                                    productsByStore[storeName].push({
+                                        name: productName,
+                                        ratio: ratio
+                                    });
+                                }
                             }
                         }
                     }
 
-                    // 填充下拉選單
-                    populateDropdowns();
+                    // 填充店名下拉選單
+                    populateStoreDropdowns();
+
+                    // 初始化產品下拉選單
+                    updateProductDropdowns();
 
                     // 隱藏載入畫面，顯示計算器
                     loadingDiv.style.display = 'none';
@@ -201,44 +236,68 @@
                     loadingDiv.innerHTML = '資料載入失敗，請重新整理頁面或稍後再試。';
                 });
 
-            // 填充下拉選單
-            function populateDropdowns() {
-                products.forEach(product => {
+            // 填充店名下拉選單
+            function populateStoreDropdowns() {
+                stores.forEach(store => {
                     const option1 = document.createElement('option');
-                    option1.value = product.name;
-                    option1.textContent = `${product.name}`;
+                    option1.value = store;
+                    option1.textContent = store;
 
                     const option2 = document.createElement('option');
-                    option2.value = product.name;
-                    option2.textContent = `${product.name}`;
+                    option2.value = store;
+                    option2.textContent = store;
 
-                    product1Select.appendChild(option1);
-                    product2Select.appendChild(option2);
+                    store1Select.appendChild(option1);
+                    store2Select.appendChild(option2);
                 });
 
-                // 預設選擇不同的產品（如果有兩個或更多）
-                if (products.length >= 2) {
-                    product2Select.selectedIndex = 1;
+                // 預設選擇不同的店家（如果有兩個或更多）
+                if (stores.length >= 2) {
+                    store2Select.selectedIndex = 1;
                 }
 
                 // 初始化事件監聽器
                 initEventListeners();
             }
 
+            // 更新產品下拉選單
+            function updateProductDropdowns() {
+                updateProductDropdown(store1Select.value, product1Select);
+                updateProductDropdown(store2Select.value, product2Select);
+            }
+
+            // 根據選擇的店名更新產品下拉選單
+            function updateProductDropdown(storeName, productSelect) {
+                // 清空現有選項
+                productSelect.innerHTML = '';
+
+                // 添加新選項
+                if (productsByStore[storeName]) {
+                    productsByStore[storeName].forEach(product => {
+                        const option = document.createElement('option');
+                        option.value = product.name;
+                        option.textContent = `${product.name}`;
+                        productSelect.appendChild(option);
+                    });
+                }
+
+                // 如果有產品選擇，觸發計算
+                if (value1Input.value) {
+                    calculateValue2();
+                } else if (value2Input.value) {
+                    calculateValue1();
+                }
+            }
+
             // 初始化事件監聽器
             function initEventListeners() {
-                // 監聽第一個輸入框的變化
-                value1Input.addEventListener('input', function () {
-                    if (value1Input.value) {
-                        calculateValue2();
-                    }
+                // 監聽店家選擇的變化
+                store1Select.addEventListener('change', function () {
+                    updateProductDropdown(store1Select.value, product1Select);
                 });
 
-                // 監聽第二個輸入框的變化
-                value2Input.addEventListener('input', function () {
-                    if (value2Input.value) {
-                        calculateValue1();
-                    }
+                store2Select.addEventListener('change', function () {
+                    updateProductDropdown(store2Select.value, product2Select);
                 });
 
                 // 監聽產品選擇的變化
@@ -257,22 +316,46 @@
                         calculateValue1();
                     }
                 });
+
+                // 監聽輸入框的變化
+                value1Input.addEventListener('input', function () {
+                    if (value1Input.value) {
+                        calculateValue2();
+                    }
+                });
+
+                value2Input.addEventListener('input', function () {
+                    if (value2Input.value) {
+                        calculateValue1();
+                    }
+                });
+            }
+
+            // 獲取產品比例
+            function getProductRatio(storeName, productName) {
+                if (productsByStore[storeName]) {
+                    const product = productsByStore[storeName].find(p => p.name === productName);
+                    return product ? product.ratio : null;
+                }
+                return null;
             }
 
             // 計算第二個產品的值
             function calculateValue2() {
+                const store1Name = store1Select.value;
                 const product1Name = product1Select.value;
+                const store2Name = store2Select.value;
                 const product2Name = product2Select.value;
 
-                const product1 = products.find(p => p.name === product1Name);
-                const product2 = products.find(p => p.name === product2Name);
+                const ratio1 = getProductRatio(store1Name, product1Name);
+                const ratio2 = getProductRatio(store2Name, product2Name);
 
-                if (product1 && product2) {
+                if (ratio1 && ratio2) {
                     const value1 = parseFloat(value1Input.value);
 
                     if (!isNaN(value1)) {
                         // 根據比例計算第二個產品的值
-                        const value2 = (value1 / product1.ratio) * product2.ratio;
+                        const value2 = (value1 / ratio1) * ratio2;
                         value2Input.value = value2.toFixed(2);
                     }
                 }
@@ -280,18 +363,20 @@
 
             // 計算第一個產品的值
             function calculateValue1() {
+                const store1Name = store1Select.value;
                 const product1Name = product1Select.value;
+                const store2Name = store2Select.value;
                 const product2Name = product2Select.value;
 
-                const product1 = products.find(p => p.name === product1Name);
-                const product2 = products.find(p => p.name === product2Name);
+                const ratio1 = getProductRatio(store1Name, product1Name);
+                const ratio2 = getProductRatio(store2Name, product2Name);
 
-                if (product1 && product2) {
+                if (ratio1 && ratio2) {
                     const value2 = parseFloat(value2Input.value);
 
                     if (!isNaN(value2)) {
                         // 根據比例計算第一個產品的值
-                        const value1 = (value2 / product2.ratio) * product1.ratio;
+                        const value1 = (value2 / ratio2) * ratio1;
                         value1Input.value = value1.toFixed(2);
                     }
                 }
