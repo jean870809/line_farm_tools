@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,39 +15,40 @@
             min-height: 100vh;
             background-color: #f5f5f5;
         }
-        
+
         .container {
             width: 90%;
             max-width: 600px;
             margin: 0 auto;
             padding: 20px;
         }
-        
+
         h1 {
             text-align: center;
             color: #333;
             margin-bottom: 30px;
         }
-        
+
         .calculator {
             background-color: white;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
         .product-group {
             margin-bottom: 20px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
         }
-        
-        select, input {
+
+        select,
+        input {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
@@ -55,67 +57,69 @@
             margin-bottom: 15px;
             box-sizing: border-box;
         }
-        
-        input:focus, select:focus {
+
+        input:focus,
+        select:focus {
             outline: none;
             border-color: #4a90e2;
             box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
         }
-        
+
         .separator {
             display: flex;
             align-items: center;
             margin: 20px 0;
         }
-        
+
         .separator hr {
             flex-grow: 1;
             border: none;
             height: 1px;
             background-color: #ddd;
         }
-        
+
         .separator span {
             margin: 0 15px;
             color: #777;
             font-weight: bold;
         }
-        
+
         .footer {
             text-align: center;
             margin-top: 30px;
             color: #777;
             font-size: 14px;
         }
-        
+
         .loading {
             text-align: center;
             padding: 30px;
             font-style: italic;
             color: #777;
         }
-        
+
         @media (max-width: 480px) {
             .container {
                 width: 95%;
                 padding: 10px;
             }
-            
+
             h1 {
                 font-size: 24px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>產品比例換算器</h1>
-        
+        <h1>Line 熊大農場產品比例換算器</h1>
+
         <div class="calculator">
             <div id="loading" class="loading">
                 正在載入產品資料，請稍候...
             </div>
-            
+
             <div id="calculator-content" style="display: none;">
                 <div class="product-group">
                     <label for="product1">產品 1:</label>
@@ -123,11 +127,12 @@
                     <label for="value1">數量:</label>
                     <input type="number" id="value1" step="any" min="0" placeholder="請輸入數量">
                 </div>
-                
+
                 <div class="separator">
-                    <hr><span>比例換算</span><hr>
+                    <hr><span>比例換算</span>
+                    <hr>
                 </div>
-                
+
                 <div class="product-group">
                     <label for="product2">產品 2:</label>
                     <select id="product2"></select>
@@ -136,20 +141,20 @@
                 </div>
             </div>
         </div>
-        
+
         <footer class="footer">
-            <p>© 2025 產品比例換算器 | 資料來源: Google Sheets</p>
+            <p>© 2025 Line 熊大農場產品比例換算器</p>
         </footer>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Google表格CSV連結
             const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTGcoHbq7kfXRlFEZCTDyTRW6YLsbUzt6oA8ii8IcE4BwVV66rmckeImgbslwpzjLTo1y6gNcopmqTK/pub?gid=0&single=true&output=csv';
-            
+
             // 產品資料陣列
             let products = [];
-            
+
             // 獲取DOM元素
             const product1Select = document.getElementById('product1');
             const product2Select = document.getElementById('product2');
@@ -157,23 +162,23 @@
             const value2Input = document.getElementById('value2');
             const loadingDiv = document.getElementById('loading');
             const calculatorContent = document.getElementById('calculator-content');
-            
+
             // 從CSV獲取產品資料
             fetch(csvUrl)
                 .then(response => response.text())
                 .then(data => {
                     // 解析CSV資料
                     const rows = data.split('\n');
-                    
+
                     // 跳過標題行（如果有的話）
                     for (let i = 1; i < rows.length; i++) {
                         const columns = rows[i].split(',');
-                        
+
                         // 確保資料格式正確
                         if (columns.length >= 2) {
                             const productName = columns[0].trim();
                             const ratio = parseFloat(columns[1].trim());
-                            
+
                             // 確保產品名稱不為空且比例是有效數字
                             if (productName && !isNaN(ratio)) {
                                 products.push({
@@ -183,10 +188,10 @@
                             }
                         }
                     }
-                    
+
                     // 填充下拉選單
                     populateDropdowns();
-                    
+
                     // 隱藏載入畫面，顯示計算器
                     loadingDiv.style.display = 'none';
                     calculatorContent.style.display = 'block';
@@ -195,57 +200,57 @@
                     console.error('獲取資料失敗:', error);
                     loadingDiv.innerHTML = '資料載入失敗，請重新整理頁面或稍後再試。';
                 });
-            
+
             // 填充下拉選單
             function populateDropdowns() {
                 products.forEach(product => {
                     const option1 = document.createElement('option');
                     option1.value = product.name;
-                    option1.textContent = `${product.name} (比例: ${product.ratio})`;
-                    
+                    option1.textContent = `${product.name}`;
+
                     const option2 = document.createElement('option');
                     option2.value = product.name;
-                    option2.textContent = `${product.name} (比例: ${product.ratio})`;
-                    
+                    option2.textContent = `${product.name}`;
+
                     product1Select.appendChild(option1);
                     product2Select.appendChild(option2);
                 });
-                
+
                 // 預設選擇不同的產品（如果有兩個或更多）
                 if (products.length >= 2) {
                     product2Select.selectedIndex = 1;
                 }
-                
+
                 // 初始化事件監聽器
                 initEventListeners();
             }
-            
+
             // 初始化事件監聽器
             function initEventListeners() {
                 // 監聽第一個輸入框的變化
-                value1Input.addEventListener('input', function() {
+                value1Input.addEventListener('input', function () {
                     if (value1Input.value) {
                         calculateValue2();
                     }
                 });
-                
+
                 // 監聽第二個輸入框的變化
-                value2Input.addEventListener('input', function() {
+                value2Input.addEventListener('input', function () {
                     if (value2Input.value) {
                         calculateValue1();
                     }
                 });
-                
+
                 // 監聽產品選擇的變化
-                product1Select.addEventListener('change', function() {
+                product1Select.addEventListener('change', function () {
                     if (value1Input.value) {
                         calculateValue2();
                     } else if (value2Input.value) {
                         calculateValue1();
                     }
                 });
-                
-                product2Select.addEventListener('change', function() {
+
+                product2Select.addEventListener('change', function () {
                     if (value1Input.value) {
                         calculateValue2();
                     } else if (value2Input.value) {
@@ -253,18 +258,18 @@
                     }
                 });
             }
-            
+
             // 計算第二個產品的值
             function calculateValue2() {
                 const product1Name = product1Select.value;
                 const product2Name = product2Select.value;
-                
+
                 const product1 = products.find(p => p.name === product1Name);
                 const product2 = products.find(p => p.name === product2Name);
-                
+
                 if (product1 && product2) {
                     const value1 = parseFloat(value1Input.value);
-                    
+
                     if (!isNaN(value1)) {
                         // 根據比例計算第二個產品的值
                         const value2 = (value1 / product1.ratio) * product2.ratio;
@@ -272,18 +277,18 @@
                     }
                 }
             }
-            
+
             // 計算第一個產品的值
             function calculateValue1() {
                 const product1Name = product1Select.value;
                 const product2Name = product2Select.value;
-                
+
                 const product1 = products.find(p => p.name === product1Name);
                 const product2 = products.find(p => p.name === product2Name);
-                
+
                 if (product1 && product2) {
                     const value2 = parseFloat(value2Input.value);
-                    
+
                     if (!isNaN(value2)) {
                         // 根據比例計算第一個產品的值
                         const value1 = (value2 / product2.ratio) * product1.ratio;
@@ -294,4 +299,5 @@
         });
     </script>
 </body>
+
 </html>
