@@ -272,64 +272,86 @@
 
             // 從CSV獲取產品資料
             fetch(csvUrl)
-                .then(response => response.text())
-                .then(data => {
-                    // 解析CSV資料
-                    const rows = data.split('\n');
-
-                    // 跳過標題行（如果有的話）
-                    for (let i = 1; i < rows.length; i++) {
-                        const columns = rows[i].split(',');
-
-                        // 確保資料格式正確
-                        if (columns.length >= 3) {
-                            const storeName = columns[0].trim();
-                            const productName = columns[1].trim();
-                            const ratio = parseFloat(columns[2].trim());
-
-                            // 確保資料有效
-                            if (storeName && productName && !isNaN(ratio)) {
-                                rawData.push({
-                                    store: storeName,
-                                    product: productName,
-                                    ratio: ratio
-                                });
-
-                                // 收集不重複的店名
-                                if (!stores.includes(storeName)) {
-                                    stores.push(storeName);
-                                }
-
-                                // 按店名組織產品
-                                if (!productsByStore[storeName]) {
-                                    productsByStore[storeName] = [];
-                                }
-
-                                // 避免重複添加產品
-                                if (!productsByStore[storeName].some(p => p.name === productName)) {
-                                    productsByStore[storeName].push({
-                                        name: productName,
-                                        ratio: ratio
-                                    });
-                                }
-                            }
-                        }
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
                     }
-
-                    // 填充店名下拉選單
-                    populateStoreDropdowns();
-
-                    // 初始化產品下拉選單
-                    updateProductDropdowns();
-
-                    // 隱藏載入畫面，顯示計算器
-                    loadingDiv.style.display = 'none';
-                    calculatorContent.style.display = 'block';
+                    return response.text();
+                })
+                .then(data => {
+                    parseCsvData(data);
                 })
                 .catch(error => {
                     console.error('獲取資料失敗:', error);
-                    loadingDiv.innerHTML = '資料載入失敗，請重新整理頁面或稍後再試。';
+                    loadingDiv.innerHTML = '線上資料載入失敗，正在嘗試載入本地備份資料...';
+                    loadLocalCsv();
                 });
+
+            function loadLocalCsv() {
+                fetch('farm_ratio.csv')
+                    .then(response => response.text())
+                    .then(data => {
+                        parseCsvData(data);
+                    })
+                    .catch(error => {
+                        console.error('獲取本地資料失敗:', error);
+                        loadingDiv.innerHTML = '本地資料載入失敗，請檢查 farm_ratio.csv 檔案是否存在。';
+                    });
+            }
+
+            function parseCsvData(data) {
+                // 解析CSV資料
+                const rows = data.split('\n');
+
+                // 跳過標題行（如果有的話）
+                for (let i = 1; i < rows.length; i++) {
+                    const columns = rows[i].split(',');
+
+                    // 確保資料格式正確
+                    if (columns.length >= 3) {
+                        const storeName = columns[0].trim();
+                        const productName = columns[1].trim();
+                        const ratio = parseFloat(columns[2].trim());
+
+                        // 確保資料有效
+                        if (storeName && productName && !isNaN(ratio)) {
+                            rawData.push({
+                                store: storeName,
+                                product: productName,
+                                ratio: ratio
+                            });
+
+                            // 收集不重複的店名
+                            if (!stores.includes(storeName)) {
+                                stores.push(storeName);
+                            }
+
+                            // 按店名組織產品
+                            if (!productsByStore[storeName]) {
+                                productsByStore[storeName] = [];
+                            }
+
+                            // 避免重複添加產品
+                            if (!productsByStore[storeName].some(p => p.name === productName)) {
+                                productsByStore[storeName].push({
+                                    name: productName,
+                                    ratio: ratio
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // 填充店名下拉選單
+                populateStoreDropdowns();
+
+                // 初始化產品下拉選單
+                updateProductDropdowns();
+
+                // 隱藏載入畫面，顯示計算器
+                loadingDiv.style.display = 'none';
+                calculatorContent.style.display = 'block';
+            }
 
             // 填充店名下拉選單
             function populateStoreDropdowns() {
